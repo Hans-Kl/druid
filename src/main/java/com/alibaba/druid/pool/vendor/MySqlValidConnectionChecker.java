@@ -56,6 +56,7 @@ public class MySqlValidConnectionChecker extends ValidConnectionCheckerAdapter i
                 ping = clazz.getMethod("pingInternal", boolean.class, int.class);
             }
 
+            // KLH: 默认会被置为ping=true,所以默认是使用ping机制,而不是validationQuery,除非手动配置usePingMethod为false
             if (ping != null) {
                 usePingMethod = true;
             }
@@ -89,6 +90,7 @@ public class MySqlValidConnectionChecker extends ValidConnectionCheckerAdapter i
             return false;
         }
 
+        // KLH: 启用usePingMethod
         if (usePingMethod) {
             if (conn instanceof DruidPooledConnection) {
                 conn = ((DruidPooledConnection) conn).getConnection();
@@ -97,7 +99,7 @@ public class MySqlValidConnectionChecker extends ValidConnectionCheckerAdapter i
             if (conn instanceof ConnectionProxy) {
                 conn = ((ConnectionProxy) conn).getRawObject();
             }
-
+            // KLH: 判断当前是mysql链接,走ping机制
             if (clazz.isAssignableFrom(conn.getClass())) {
                 if (validationQueryTimeout <= 0) {
                     validationQueryTimeout = DEFAULT_VALIDATION_QUERY_TIMEOUT;
@@ -112,10 +114,12 @@ public class MySqlValidConnectionChecker extends ValidConnectionCheckerAdapter i
                     }
                     throw e;
                 }
+                // KLH: 走完ping机制,直接方法返回了,不会走validateQuery机制
                 return true;
             }
         }
 
+        // KLH: validateQuery机制
         String query = validateQuery;
         if (validateQuery == null || validateQuery.isEmpty()) {
             query = DEFAULT_VALIDATION_QUERY;
